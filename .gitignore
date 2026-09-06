@@ -1,0 +1,22 @@
+# personal data — never commit
+*.jpg
+*.jpeg
+*.png
+portrait_bw.jpg
+portrait_key.json
+cats.json
+exif.json
+cookies.txt
+
+# personal admin/upload scripts (contain no secrets but are session-specific)
+upload_*.py
+finalize.py
+cleanup_cats.py
+rename.py
+save_about.py
+reorder_lip.py
+
+# local artifacts
+node_modules/
+.wrangler/
+test/dl.png

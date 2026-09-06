@@ -1,0 +1,18 @@
+name = "nima-portfolio"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+account_id = "c86d27de5f90c256eb2ac6ce6861e453"
+
+[vars]
+# Set your admin password via: npx wrangler secret put ADMIN_PASSWORD
+# (a placeholder here is fine; the worker also falls back to the env var at runtime)
+
+# metadata: categories, photo index, site settings, sessions
+[[kv_namespaces]]
+binding = "PF_META"
+id = "c81246eded104a21919f578c88009151"
+
+# media: image binary blobs (KV values, max ~24MB each)
+[[kv_namespaces]]
+binding = "PF_MEDIA"
+id = "ea876e2a5ab343eca359510d38e7a591"
