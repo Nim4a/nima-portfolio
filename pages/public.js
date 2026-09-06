@@ -109,9 +109,16 @@ header{position:sticky;top:0;z-index:20;display:flex;justify-content:space-betwe
 .bhint{text-align:center;margin-top:14px;font-size:10px;letter-spacing:.14em;color:#b5b5b0;text-transform:uppercase}
 @media(max-width:640px){
   .book{aspect-ratio:1/1.42}
-  .sheet{left:0;width:100%;transform-origin:center}
   .book::before{display:none}
   .face{padding:14px 16px 12px}
+  /* MOBILE: single-page slide deck instead of the 3D spread.
+     Each sheet carries its front page only; back face is repurposed as
+     the "next" page sitting on top via z-index so the deck reads 1 page at a time. */
+  .sheet{left:0;width:100%;transform:none!important;transform-origin:center;transition:transform .45s cubic-bezier(.3,.7,.3,1),opacity .4s ease}
+  .sheet.flipped{transform:translateX(-108%)!important;opacity:0;pointer-events:none}
+  .face.back{transform:none!important;position:absolute;inset:0;z-index:1}
+  .sheet:not(.flipped) .face.back{display:none}
+  .sheet.flipped .face.front{visibility:hidden}
 }
 /* loading shimmer + entrance */
 .cell{background:linear-gradient(110deg,#eceae6 30%,#f4f2ee 50%,#eceae6 70%);background-size:200% 100%;animation:shim 1.8s linear infinite}
@@ -243,12 +250,25 @@ footer{display:flex;justify-content:space-between;align-items:center;padding:20p
 }
 @keyframes dfloatD{0%,100%{transform:translate(0,0)}50%{transform:translate(var(--wx,6px),var(--wy,-9px)) scale(1.3)}}
 @media(max-width:560px){
-  .shelf{gap:12px;padding-bottom:calc(var(--pad)*1.1)}
-  .sbook{width:clamp(120px,30vw,170px)}
-  .sbook h3{font-size:13.5px;letter-spacing:.38em;padding-left:.38em}
-  .sbook .yr{font-size:9px;letter-spacing:.24em;bottom:20px}
-  .ribbon{width:15px;height:44px;bottom:-13px}
-  .sbook .spine{width:12%}
+  /* shelf: vertical stack of horizontal-facing books (titles read normally) */
+  .shelf{flex-direction:column;align-items:center;gap:26px;padding-bottom:calc(var(--pad)*1.1)}
+  .sbook{width:min(78vw,300px);aspect-ratio:1.45;cursor:pointer}
+  .sbook .sc{display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .sbook .cframe{inset:12px}
+  .sbook h3{position:static;transform:none;writing-mode:horizontal-tb;text-align:center;font-size:16px;letter-spacing:.34em;padding-left:.34em;margin-right:-.34em;white-space:normal;line-height:1.4}
+  .sbook .yr{bottom:16px;font-size:9px;letter-spacing:.26em}
+  .sbook .spine{width:8%}
+  .ribbon{left:10%;width:16px;height:46px;bottom:-14px;transform:rotate(-3deg)}
+  .shelfintro p{font-size:10px;letter-spacing:.3em;margin-right:-.3em}
+  .shelf::after{margin:20px auto 0}
+}
+@media(max-width:640px){
+  .bhint{font-size:11px;letter-spacing:.12em;color:#8a8a85}
+  .bookbar{gap:12px;margin-top:16px}
+  .bookbar button{padding:11px 18px;font-size:11px}
+  /* clearer wipe hint on touch: bigger, pill, high contrast */
+  .frost .hint{bottom:18px;font-size:11px;letter-spacing:.3em;color:#141412;background:rgba(253,253,251,.82);border:1px solid rgba(20,20,18,.25);border-radius:99px;padding:10px 18px;left:50%;right:auto;transform:translateX(-50%);white-space:nowrap}
+  .frost{backdrop-filter:blur(1.2px)}
 }
 /* lightbox */
 .lb{position:fixed;inset:0;z-index:50;background:rgba(10,10,9,.94);display:none;flex-direction:column}
@@ -409,13 +429,13 @@ function pickBook(b){
   bw.className="bookwrap on open";
   el("bback").style.display="";
   buildBook();
-  el("bhint").textContent=(b.title)+" — click a page or use arrow keys to flip · Esc = shelf";
+  el("bhint").textContent=isMobile()?(b.title+" — tap the cover, then swipe or use the arrows"):(b.title+" — click a page or use arrow keys to flip · Esc = shelf");
 }
 function backToShelf(){
   BOOK_CUR=null;COVER_OPEN=false;WIPING=false;B_ELS=[];B_PAGES=[];
   el("bback").style.display="none";
   el("bookwrap").className="bookwrap on";
-  el("bhint").textContent="Click a page or use arrow keys to flip";
+  el("bhint").textContent=isMobile()?"Tap a book to open it":"Click a book to open it";
 }
 function bookList(){
   if(BOOK_CUR)return PHOTOS.filter(function(p){return String(p.cat)===String(BOOK_CUR.cat)});
@@ -659,10 +679,24 @@ function wipeFrost(){
     fr.addEventListener("animationend",function(){COVER_OPEN=true;WIPING=false;if(fr.parentNode)fr.parentNode.removeChild(fr)},{once:true});
   }else{COVER_OPEN=true;WIPING=false}
 }
+function isMobile(){return window.matchMedia?window.matchMedia("(max-width:640px)").matches:window.innerWidth<=640}
 function buildBook(){
   var list=bookList();
   B_PAGES=[{cover:true}];
   for(var i=0;i<list.length;i++)B_PAGES.push(list[i]);
+  if(isMobile()){
+    /* mobile: one page per sheet — a simple slide deck */
+    if(B_PAGES.length%2===0)B_PAGES.push({fin:true});
+    var bk0=el("book");bk0.innerHTML="";B_ELS=[];B_CUR=0;
+    for(var m=0;m<B_PAGES.length;m++){
+      var shm=document.createElement("div");shm.className="sheet";
+      shm.appendChild(faceEl(B_PAGES[m],"fr front"));
+      shm.appendChild(faceEl(null,"bk back"));
+      bk0.appendChild(shm);B_ELS.push(shm);
+    }
+    updateZ();updateBar();
+    return
+  }
   if(B_PAGES.length%2===0)B_PAGES.push({fin:true});
   var n=Math.ceil(B_PAGES.length/2);
   var bk=el("book");bk.innerHTML="";B_ELS=[];B_CUR=0;
@@ -748,14 +782,19 @@ function pageNumberOf(idx){
 }
 function updateBar(){
   var n=B_PAGES.length;
-  var x=Math.min(2*B_CUR+1,n),y=Math.min(2*B_CUR+2,n);
-  el("bpage").textContent=(B_CUR===0)?("cover — "+(BOOK_CUR?BOOK_CUR.title:"")):(x+" – "+y+" / "+n);
+  if(isMobile()){
+    var pg=Math.min(B_CUR,n);
+    el("bpage").textContent=(B_CUR===0)?("cover — "+(BOOK_CUR?BOOK_CUR.title:"")):(pg+" / "+n);
+  }else{
+    var x=Math.min(2*B_CUR+1,n),y=Math.min(2*B_CUR+2,n);
+    el("bpage").textContent=(B_CUR===0)?("cover — "+(BOOK_CUR?BOOK_CUR.title:"")):(x+" – "+y+" / "+n);
+  }
   el("bprev").disabled=B_CUR===0;
   el("bnext").disabled=B_CUR>=B_ELS.length;
   /* page numbers */
   for(var i=0;i<B_ELS.length;i++){
     var fr=B_ELS[i].querySelectorAll(".pgn"),bk=B_ELS[i].querySelectorAll(".pgn");
-    if(fr.length===2){fr[0].textContent=pageNumberOf(i*2);fr[1].textContent=pageNumberOf(i*2+1)}
+    if(fr.length===2){fr[0].textContent=pageNumberOf(isMobile()?i:i*2);fr[1].textContent=pageNumberOf(isMobile()?i+1:i*2+1)}
   }
 }
 function flip(dir){
