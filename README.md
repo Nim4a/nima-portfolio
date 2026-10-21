@@ -5,6 +5,10 @@ No static hosting, no database — metadata in Workers KV, images as KV blobs.
 
 **Live:** https://nima-portfolio.nima64301.workers.dev
 
+<p align="center">
+  <img src="docs/hero.png" alt="Portfolio home: three hardcover books on a shelf — Architecture, Digital Art, Photobook" width="900">
+</p>
+
 ## Features
 
 - **Virtual flip photobook** — three hardcovers on a shelf (Photography / Digital Art / Architecture), each opens into a 3D page-flipping book with:
