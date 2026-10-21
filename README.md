@@ -3,7 +3,7 @@
 A minimal photographer/artist portfolio served entirely by a single Cloudflare Worker.
 No static hosting, no database — metadata in Workers KV, images as KV blobs.
 
-**Live:** https://portofolio.nim.qzz.io/
+**Live:** https://portfolio.nim.qzz.io/
 
 <p align="center">
   <img src="docs/hero.png" alt="Portfolio home: three hardcover books on a shelf — Architecture, Digital Art, Photobook" width="900">
